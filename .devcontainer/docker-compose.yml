@@ -5,6 +5,6 @@ services:
       - ../.:/workspace:cached
       - ../src:/var/www/html
       - ../nginx.conf:/etc/nginx/nginx.conf:ro
-      - ~/.ssh:/root/.ssh
+      - ~/.ssh:/home/user/.ssh:ro
     ports:
       - 80:80
