@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder with Volume Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        audio,
+        .volume {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Audio Recorder</h1>
+    <button id="record">Record</button>
+    <button id="stop" disabled>Stop</button>
+    <audio id="audio" controls></audio>
+    <div class="volume">Volume: <span id="volume">0</span></div>
+
+    <script>
+        const recordButton = document.getElementById('record');
+        const stopButton = document.getElementById('stop');
+        const audioElement = document.getElementById('audio');
+        const volumeElement = document.getElementById('volume');
+
+        const audioContext = new AudioContext();
+
+        recordButton.addEventListener('click', async () => {
+            // Check if the browser supports the MediaDevices API
+            if (!navigator.mediaDevices) {
+                alert('getUserMedia() not supported.');
+                return;
+            }
+
+            audioContext.resume();
+
+            // Disable the record button and enable the stop button
+            recordButton.disabled = true;
+            stopButton.disabled = false;
+
+            // Create an audio context and get the audio stream
+            await audioContext.audioWorklet.addModule('processor.js');
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const micNode = audioContext.createMediaStreamSource(mediaStream);
+
+            // Create the audio nodes
+            const audioWorkletNode = new AudioWorkletNode(audioContext, 'audio-recording-processor');
+
+            audioWorkletNode.port.onmessage = event => {
+                console.log(event.data);
+                volumeElement.innerText = event.data.value;
+            };
+
+            micNode.connect(audioWorkletNode).connect(audioContext.destination);
+        });
+
+        stopButton.addEventListener('click', () => {
+            audioContext.close();
+
+            recordButton.disabled = false;
+            stopButton.disabled = true;
+        });
+    </script>
+</body>
+
+</html>
